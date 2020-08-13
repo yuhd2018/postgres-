@@ -1,0 +1,21 @@
+一、	Docker 拉取postgres与postgis镜像
+Docker拉取资料：
+	https://blog.csdn.net/geol200709/article/details/89481194
+	https://github.com/kartoza/docker-postgis#alternative-base-distributions-builds
+二、	非PGPOOL
+	Master docker 启动：docker run --name=postgis -d -e POSTGRES_USER=sde -e POSTGRES_PASS=Sde@2018  -e POSTGRES_DBNAME=gis  -e ARCHIVE_MODE=off -e ARCHIVE_COMMAND="test ! -f /opt/archivedir/%f && cp %p /opt/archivedir/%f" -e ARCHIVE_CLEANUP_COMMAND="pg_archivecleanup /opt/archivedir %r" -e RESTORE_COMMAND='cp /opt/archivedir/%f "%p"' -e WAL_LEVEL=replica -e ALLOW_IP_RANGE=10.209.180.230 -e REPLICATION_USER=replicator -e REPLICATION_PASS=replicator -p 5432:5432 -v /data01/docker/pgsql/data:/var/lib/postgresql --restart=always postgis:1.0 /bin/bash                                                          
+	Slave docker启动：docker run --name=postgis -d -e POSTGRES_USER=sde -e POSTGRES_PASS=Sde@2018  -e POSTGRES_DBNAME=gis -e REPLICATE_FROM=主服务器IP -e DESTROY_DATABASE_ON_RESTART=true -e REPLICATION_USER=replicator -e REPLICATION_PASS=replicator   -p 5432:5432 -v /data01/docker/pgsql/data:/var/lib/postgresql --restart=always postgis:1.0 /bin/bash
+	假如主挂了，那备份即可作为主库使用，原主库做备份使用
+备库需做以下操作才能作为主库：
+/usr/lib/postgresql/12/bin/pg_ctl promote -D /var/lib/postgresql/12/main/
+原主库需：
+删除原有容器后执行docker run --name=postgis -d -e POSTGRES_USER=sde -e POSTGRES_PASS=Sde@2018  -e POSTGRES_DBNAME=gis -e REPLICATE_FROM=新主服务器IP -e DESTROY_DATABASE_ON_RESTART=true -e REPLICATION_USER=replicator -e REPLICATION_PASS=replicator   -p 5432:5432 -v /data01/docker/pgsql/data:/var/lib/postgresql --restart=always postgis:1.0 /bin/bash
+这种已经实现了主备方式
+
+
+参考：
+
+http://shangdixinxi.com/detail-1474246.html
+https://github.com/kartoza/docker-postgis#alternative-base-distributions-builds 
+https://blog.csdn.net/geol200709/article/details/89481194 
+https://blog.csdn.net/m15217321304/article/details/88845353  --查看主备库情况
